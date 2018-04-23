@@ -14,8 +14,8 @@ import (
 
 type server struct{}
 
-func (s *server) GetFlag(ctx context.Context, query *fflagrpc.FlagQuery) (*fflagrpc.Flag, error) {
-	c, err := redis.Dial("tcp", defaultRedisAddress+":"+defaultRedisPort)
+func (s *server) GetFlag(ctx context.Context, query *fflagcheckapi.FlagQuery) (*fflagcheckapi.FlagResult, error) {
+	c, err := redis.Dial("tcp", redisAddress+":"+redisPort)
 	if err != nil {
 		panic(err)
 	}
@@ -30,16 +30,18 @@ func (s *server) GetFlag(ctx context.Context, query *fflagrpc.FlagQuery) (*fflag
 		valBool = true
 	}
 
-	return &fflagrpc.Flag{Found: true, Value: valBool}, nil
+	return &fflagcheckapi.FlagResult{Found: true, Value: valBool}, nil
 }
 
 func main() {
-	listener, err := net.Listen("tcp", ":"+defaultListenPort)
+	loadConfigGlobals()
+
+	listener, err := net.Listen("tcp", ":"+listenPort)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	fflagrpc.RegisterFeatureFlagServer(s, &server{})
+	fflagcheckapi.RegisterFeatureFlagServer(s, &server{})
 	reflection.Register(s)
 	if err := s.Serve(listener); err != nil {
 		log.Fatalf("failed to serve: %v", err)
