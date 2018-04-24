@@ -10,28 +10,34 @@ import (
 type server struct{}
 
 func (s *server) GetFlag(ctx context.Context, query *fflagcheckapi.FlagQuery) (*fflagcheckapi.FlagResult, error) {
-	flagValue, err := getFlag(query.AccountId, query.FlagName)
+	flagValue, foundFlag, err := getFlag(query.AccountId, query.FlagName)
 	if err != nil {
 		return nil, err
 	}
 
-	return &fflagcheckapi.FlagResult{Found: true, Value: flagValue}, nil
+	return &fflagcheckapi.FlagResult{Found: foundFlag, Value: flagValue}, nil
 }
 
-func getFlag(accountId string, flagName string) (bool, error) {
+func getFlag(accountId string, flagName string) (bool, bool, error) {
 	c, err := redis.Dial("tcp", redisAddress+":"+redisPort)
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 	defer c.Close()
 
 	key := accountId + "." + flagName
 	val, err := c.Do("GET", key)
 	fmt.Println("raw val: ", val, err)
+
+	found := false
 	flagValue := false
-	if val.(uint8) == 49 { // Hack - getting around encoding issues.
-		flagValue = true
+
+	if val != nil {
+		found = true
+		if val.(uint8) == 49 { // Hack - getting around encoding issues.
+			flagValue = true
+		}
 	}
 
-	return flagValue, nil
+	return flagValue, found, nil
 }

@@ -1,10 +1,13 @@
 package main
 
-import "os"
+import (
+	"os"
+	"fmt"
+)
 
 const (
 	defaultListenPort   = "50051"
-	defaultRedisAddress = "fflag-redis"
+	defaultRedisAddress = "localhost"
 	defaultRedisPort    = "6379"
 )
 
@@ -28,4 +31,6 @@ func loadConfigGlobals() {
 	if redisPort == "" {
 		redisPort = defaultRedisPort
 	}
+
+	fmt.Println("Loaded config - Redis on ", redisAddress, ":", redisPort)
 }
